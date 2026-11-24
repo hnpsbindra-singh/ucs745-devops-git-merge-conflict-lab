@@ -22,9 +22,11 @@ Developed as part of the **UCS 745 Cloud and DevOps Lab Assignment**, this repos
 ---
 
 ## 3. Storage Pricing Specification
-Storage cost calculation logic:
-Standard base rates apply across all storage tiers with flat linear pricing per GB/month.
-No automated volume discounts or regional adjustments are applied in the baseline version.
+Storage cost calculation logic (Updated in feature/volume-discount):
+Volume Discount Model:
+- Tier 1: 0 - 499 GB: Baseline retail storage rate (0% discount).
+- Tier 2: 500 - 1999 GB: 10% volume discount applied across usage.
+- Tier 3: 2000+ GB: 20% enterprise bulk storage discount applied.
 
 ---
 

@@ -36,13 +36,24 @@ def calculate_compute_cost(instance_type: str, hours: float, count: int = 1) -> 
 
 def calculate_storage_cost(volume_type: str, size_gb: float, duration_months: float = 1.0) -> float:
     """
-    Calculate monthly storage cost for a given volume type and size in GB.
-    Base implementation without tiering or regional factors.
+    Calculate monthly storage cost with volume discount tiers:
+    - Standard rate for < 500 GB
+    - 10% volume discount for >= 500 GB
+    - 20% volume discount for >= 2000 GB
     """
     rate = STORAGE_BASE_RATES.get(volume_type)
     if rate is None:
         raise ValueError(f"Unknown volume type '{volume_type}'. Available: {list(STORAGE_BASE_RATES.keys())}")
-    total_cost = rate * size_gb * duration_months
+    
+    # Apply volume discount tier
+    if size_gb >= 2000:
+        discount_factor = 0.80  # 20% off
+    elif size_gb >= 500:
+        discount_factor = 0.90  # 10% off
+    else:
+        discount_factor = 1.00  # Full price
+
+    total_cost = (rate * size_gb * discount_factor) * duration_months
     return round(total_cost, 4)
 
 
