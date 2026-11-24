@@ -17,12 +17,18 @@ INSTANCE_PRICING = {
 }
 
 STORAGE_BASE_RATES = {
-    "gp3": 0.08,       # USD per GB/month
-    "gp2": 0.10,       # USD per GB/month
-    "io2": 0.125,      # USD per GB/month
+    "gp3": 0.08,          # USD per GB/month
+    "gp2": 0.10,          # USD per GB/month
+    "io2": 0.125,         # USD per GB/month
     "s3_standard": 0.023, # USD per GB/month
     "s3_infrequent": 0.0125, # USD per GB/month
     "s3_glacier": 0.004,     # USD per GB/month
+}
+
+REGION_MULTIPLIERS = {
+    "us-east-1": 1.00,   # Baseline N. Virginia
+    "ap-south-1": 1.15,  # Mumbai (+15% infrastructure factor)
+    "eu-central-1": 1.20 # Frankfurt (+20% compliance & energy factor)
 }
 
 
@@ -34,26 +40,35 @@ def calculate_compute_cost(instance_type: str, hours: float, count: int = 1) -> 
     return round(rate * hours * count, 4)
 
 
-def calculate_storage_cost(volume_type: str, size_gb: float, duration_months: float = 1.0) -> float:
+def calculate_storage_cost(
+    volume_type: str,
+    size_gb: float,
+    duration_months: float = 1.0,
+    region: str = "us-east-1"
+) -> float:
     """
-    Calculate monthly storage cost with volume discount tiers:
-    - Standard rate for < 500 GB
-    - 10% volume discount for >= 500 GB
-    - 20% volume discount for >= 2000 GB
+    Calculate monthly storage cost synthesized from both branches:
+    - Feature Branch 1: Enterprise volume discount tiering (<500GB: 1.0x, >=500GB: 0.90x, >=2000GB: 0.80x)
+    - Feature Branch 2: Multi-region pricing multipliers (us-east-1: 1.00x, ap-south-1: 1.15x, eu-central-1: 1.20x)
+    Merged cleanly to provide comprehensive cost estimation.
     """
     rate = STORAGE_BASE_RATES.get(volume_type)
     if rate is None:
         raise ValueError(f"Unknown volume type '{volume_type}'. Available: {list(STORAGE_BASE_RATES.keys())}")
-    
-    # Apply volume discount tier
-    if size_gb >= 2000:
-        discount_factor = 0.80  # 20% off
-    elif size_gb >= 500:
-        discount_factor = 0.90  # 10% off
-    else:
-        discount_factor = 1.00  # Full price
 
-    total_cost = (rate * size_gb * discount_factor) * duration_months
+    # 1. Evaluate Volume Discount Factor (from feature/volume-discount)
+    if size_gb >= 2000:
+        discount_factor = 0.80  # 20% bulk enterprise discount
+    elif size_gb >= 500:
+        discount_factor = 0.90  # 10% volume discount
+    else:
+        discount_factor = 1.00  # Standard rate
+
+    # 2. Evaluate Regional Multiplier (from feature/regional-pricing)
+    multiplier = REGION_MULTIPLIERS.get(region, 1.00)
+
+    # 3. Calculate Consolidated Cost
+    total_cost = (rate * size_gb * discount_factor * multiplier) * duration_months
     return round(total_cost, 4)
 
 
@@ -79,14 +94,20 @@ def calculate_sla_availability(downtime_minutes: float, period_days: int = 30) -
     }
 
 
-def estimate_monthly_cloud_bill(compute_configs: list, storage_configs: list, egress_gb: float = 250.0) -> dict:
+def estimate_monthly_cloud_bill(
+    compute_configs: list,
+    storage_configs: list,
+    egress_gb: float = 250.0,
+    region: str = "us-east-1"
+) -> dict:
     """Generate consolidated monthly infrastructure expenditure estimate."""
     total_compute = sum(calculate_compute_cost(c["type"], 730, c.get("count", 1)) for c in compute_configs)
-    total_storage = sum(calculate_storage_cost(s["type"], s["size_gb"], 1.0) for s in storage_configs)
+    total_storage = sum(calculate_storage_cost(s["type"], s["size_gb"], 1.0, region=region) for s in storage_configs)
     total_network = calculate_network_transfer(egress_gb)
     grand_total = total_compute + total_storage + total_network
 
     return {
+        "region": region,
         "compute_cost": round(total_compute, 2),
         "storage_cost": round(total_storage, 2),
         "network_cost": round(total_network, 2),

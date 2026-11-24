@@ -21,12 +21,19 @@ Developed as part of the **UCS 745 Cloud and DevOps Lab Assignment**, this repos
 
 ---
 
-## 3. Storage Pricing Specification
-Storage cost calculation logic (Updated in feature/volume-discount):
-Volume Discount Model:
-- Tier 1: 0 - 499 GB: Baseline retail storage rate (0% discount).
-- Tier 2: 500 - 1999 GB: 10% volume discount applied across usage.
-- Tier 3: 2000+ GB: 20% enterprise bulk storage discount applied.
+## 3. Storage Pricing Specification (Resolved & Merged)
+Storage cost calculation logic incorporates both feature additions:
+1. **Enterprise Volume Discount Tiers** (from `feature/volume-discount`):
+   - Tier 1 (0 – 499 GB): 1.00x baseline rate (0% discount).
+   - Tier 2 (500 – 1999 GB): 0.90x rate (10% volume discount).
+   - Tier 3 (2000+ GB): 0.80x rate (20% enterprise bulk discount).
+2. **Multi-Region Cost Adjustment** (from `feature/regional-pricing`):
+   - `us-east-1` (N. Virginia): 1.00x base reference rate.
+   - `ap-south-1` (Mumbai): 1.15x regional infrastructure surcharge (+15%).
+   - `eu-central-1` (Frankfurt): 1.20x power and compliance surcharge (+20%).
+
+**Consolidated Pricing Formula:**
+$$\text{Storage Cost} = \text{Base Rate} \times \text{Size (GB)} \times \text{Discount Factor} \times \text{Regional Multiplier} \times \text{Months}$$
 
 ---
 
