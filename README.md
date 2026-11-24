@@ -22,9 +22,11 @@ Developed as part of the **UCS 745 Cloud and DevOps Lab Assignment**, this repos
 ---
 
 ## 3. Storage Pricing Specification
-Storage cost calculation logic:
-Standard base rates apply across all storage tiers with flat linear pricing per GB/month.
-No automated volume discounts or regional adjustments are applied in the baseline version.
+Storage cost calculation logic (Updated in feature/regional-pricing):
+Multi-Region Cost Adjustment:
+- US East (N. Virginia, us-east-1): 1.0x baseline reference pricing.
+- Asia Pacific (Mumbai, ap-south-1): 1.15x regional infrastructure surcharge.
+- Europe (Frankfurt, eu-central-1): 1.20x power and compliance surcharge.
 
 ---
 

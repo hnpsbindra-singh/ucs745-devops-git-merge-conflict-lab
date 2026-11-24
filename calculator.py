@@ -34,15 +34,25 @@ def calculate_compute_cost(instance_type: str, hours: float, count: int = 1) -> 
     return round(rate * hours * count, 4)
 
 
-def calculate_storage_cost(volume_type: str, size_gb: float, duration_months: float = 1.0) -> float:
+def calculate_storage_cost(volume_type: str, size_gb: float, duration_months: float = 1.0, region: str = "us-east-1") -> float:
     """
-    Calculate monthly storage cost for a given volume type and size in GB.
-    Base implementation without tiering or regional factors.
+    Calculate monthly storage cost with regional cost multipliers:
+    - us-east-1 (N. Virginia): 1.0x (Baseline)
+    - ap-south-1 (Mumbai): 1.15x
+    - eu-central-1 (Frankfurt): 1.20x
     """
     rate = STORAGE_BASE_RATES.get(volume_type)
     if rate is None:
         raise ValueError(f"Unknown volume type '{volume_type}'. Available: {list(STORAGE_BASE_RATES.keys())}")
-    total_cost = rate * size_gb * duration_months
+
+    region_multipliers = {
+        "us-east-1": 1.00,
+        "ap-south-1": 1.15,
+        "eu-central-1": 1.20,
+    }
+    multiplier = region_multipliers.get(region, 1.00)
+
+    total_cost = (rate * size_gb * multiplier) * duration_months
     return round(total_cost, 4)
 
 
